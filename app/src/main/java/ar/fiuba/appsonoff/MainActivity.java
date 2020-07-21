@@ -45,7 +45,6 @@ public class MainActivity extends AppCompatActivity {
     ImageButton button;
 
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,7 +69,6 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
         intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "hable para ingresar la instrucción");
-
         // start intent
         try {
             startActivityForResult(intent, REQUEST_CODE_SPEECH_INPUT);
@@ -81,8 +79,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // receive voice input and handle it
-
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -93,13 +89,14 @@ public class MainActivity extends AppCompatActivity {
                     // get text array from voice intent
                     ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     //set to text view
-                    String command = result.get(0);
-
-                    if(WORDS_TO_ON.contains(command.trim()) || WORDS_TO_OFF.contains(command.trim())){
+                    String instruction = result.get(0);
+                    instruction = instruction.trim().toLowerCase();
+                    Log.i("MSG", "instruccion: " + instruction);
+                    if(WORDS_TO_ON.contains(instruction.trim()) || WORDS_TO_OFF.contains(instruction.trim())){
                         textView.setText("Estado: ");
-                        //callSonoffSimulator(dataAux);
+                        //callDeviceSonoff(instruction);
                         // para simular el cambio de estado
-                        changeState(command);
+                        changeState(instruction);
 //                        Thread thread = new Thread(new Runnable() {
 //
 //                            @Override
@@ -115,11 +112,9 @@ public class MainActivity extends AppCompatActivity {
 //
 //                        thread.start();
                     }else {
-                        command = "instrucción no válida!";
-                        textView.setText(command);
+                        instruction = "instrucción no válida!";
+                        textView.setText(instruction);
                     }
-
-
 
                 }
                 break;
@@ -129,11 +124,11 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * cambia el estado en la pantalla segun el parametro
-     * @param command
+     * @param instruction
      */
-    private void changeState(String command){
+    private void changeState(String instruction){
         ImageView imageView = (ImageView)findViewById(R.id.statusImage);
-        if(WORDS_TO_ON.contains(command)){
+        if(WORDS_TO_ON.contains(instruction)){
             Log.i("MSG", "prendiendo el dispositivo...");
             imageView.setImageResource(R.drawable.on);
         }else {
@@ -142,20 +137,25 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void callSonoffSimulator(String data){
+    /**
+     * apaga/prende el simulador segun el parametro
+     * @param instruction
+     */
+
+    private void callDeviceSonoff(String instruction){
 //        String urlString = "http://10.0.2.2:8080/zeroconf/switch";
         String urlString = "http://127.0.0.1:8080/zeroconf/switch";
         OutputStream out = null;
-        String command = data.equalsIgnoreCase("prender") ? "on" : "off";
+        String command = WORDS_TO_ON.contains(instruction) ? "on" : "off";
         //String body = "{\"data\": {\"switch\":\"+command+\"}";
-        String body = "{\"data\": {\"switch\":\"on\"}";
+        String body = "{\"data\": {\"switch\":\"+command+\"}";
 
        // JSONParser parser = new JSONParser();
         //JSONObject jsonObject = new JSONObject();
         //jsonObject.put("data", "arg_1");
         String response = "";
         try {
-            System.out.println("inicio callSonoff.. ");
+            Log.i("MSG", "invocando al simulador...");
             URL url = new URL(urlString);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
@@ -168,13 +168,11 @@ public class MainActivity extends AppCompatActivity {
 
             out = new BufferedOutputStream(connection.getOutputStream());
             Log.i("JSON", body);
-            Log.i("MSG", "invocando a sonoff");
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out, "UTF-8"));
             writer.write(body);
             writer.flush();
             writer.close();
             //out.close();
-            System.out.println("view responseCode... ");
             Log.i("STATUS", String.valueOf(connection.getResponseCode()));
             Log.i("MSG" , connection.getResponseMessage());
             int responseCode=connection.getResponseCode();
@@ -193,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
 
             connection.connect();
         } catch (Exception e) {
-            System.out.println("error al invocar a sonoff " + e.getMessage() + "causa: " + e.getCause());
+            Log.e("MSG", "error al invocar al simulador" + e.getMessage());
         }
     }
 
@@ -204,67 +202,64 @@ public class MainActivity extends AppCompatActivity {
         try {
             System.out.println("inicio callSonoff.. ");
 //            String urlStr = "http://127.0.0.1:8080/zeroconf/info";
-            String urlStr = "http://10.0.2.2:8080/zeroconf/info";
-            String urlSwitch = "http://10.0.2.2:8080/zeroconf/switch";
+            String urlInfo = "http://10.0.2.2:8080/zeroconf/info";
 
-            String data = URLEncoder.encode("data", "UTF-8")
-                    + "=" + URLEncoder.encode("{\"switch\":\"on\"}", "UTF-8");
-            url = new URL(urlSwitch);
+            url = new URL(urlInfo);
 
             // Send POST data request
-
+            String data = "{\"data\": {}";
+            Log.i("MSG", "obteniendo el estado del dispositivo...");
             URLConnection conn = url.openConnection();
             conn.setDoOutput(true);
             OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream());
             wr.write( data );
             wr.flush();
             wr.close();
-            System.out.println("##### OK1.. ");
         } catch (MalformedURLException e) {
-            System.out.println("##### OK2.. ");
-            e.printStackTrace();
+            Log.e("MSG", "error al obtener el estado del dispositivo: " + e.getMessage());
 
         } catch (IOException e) {
-            System.out.println("##### OK3.. ");
-            e.printStackTrace();
+            Log.e("MSG", "error al obtener el estado del dispositivo: " + e.getMessage());
 
         }
-        System.out.println("##### OK.. ");
 
     }
 
-    public void run() {
-        // TODO Auto-generated method stub
-        URL myurl = null;
-        String jsoncode = null;
-        boolean threading;
-
-        try {
-            myurl = new URL("http://10.0.2.2/list.JSON");
-        }
-        catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        try {
-            URLConnection myconn = myurl.openConnection();
-            InputStream in = new BufferedInputStream(myconn.getInputStream());
-            InputStreamReader reader = new InputStreamReader(in);
-            BufferedReader br = new BufferedReader(reader);
-            String line;
-            StringBuilder sb = new StringBuilder();
-            while ((line=br.readLine()) != null)
-            {
-                sb.append(line);
-                //Toast.makeText(getApplicationContext(), "I enter here", Toast.LENGTH_LONG).show();
-            }
-            jsoncode = sb.toString();
-        }
-        catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        threading = true;
-//        super.run();
-    }
+    /**
+     * Solo de prueba
+     */
+//    public void run() {
+//        // TODO Auto-generated method stub
+//        URL myurl = null;
+//        String jsoncode = null;
+//        boolean threading;
+//
+//        try {
+//            myurl = new URL("http://10.0.2.2/list.JSON");
+//        }
+//        catch (MalformedURLException e) {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//        }
+//        try {
+//            URLConnection myconn = myurl.openConnection();
+//            InputStream in = new BufferedInputStream(myconn.getInputStream());
+//            InputStreamReader reader = new InputStreamReader(in);
+//            BufferedReader br = new BufferedReader(reader);
+//            String line;
+//            StringBuilder sb = new StringBuilder();
+//            while ((line=br.readLine()) != null)
+//            {
+//                sb.append(line);
+//                //Toast.makeText(getApplicationContext(), "I enter here", Toast.LENGTH_LONG).show();
+//            }
+//            jsoncode = sb.toString();
+//        }
+//        catch (IOException e) {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//        }
+//        threading = true;
+////        super.run();
+//    }
 }

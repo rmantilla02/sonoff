@@ -25,7 +25,7 @@
         android:layout_below="@id/textTV"
         android:scaleType="fitCenter"
         android:layout_centerVertical="true"
-        android:layout_marginLeft="120dp"
+        android:layout_marginLeft="115dp"
         />
 
     <ImageButton
