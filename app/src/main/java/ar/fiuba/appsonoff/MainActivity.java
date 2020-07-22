@@ -94,9 +94,10 @@ public class MainActivity extends AppCompatActivity {
                     Log.i("MSG", "instruccion: " + instruction);
                     if(WORDS_TO_ON.contains(instruction.trim()) || WORDS_TO_OFF.contains(instruction.trim())){
                         textView.setText("Estado: ");
-                        //callDeviceSonoff(instruction);
-                        // para simular el cambio de estado
+                        // TODO: revisar: sigue tirando error de permisos
+                        callDeviceSonoff(instruction);
                         changeState(instruction);
+
 //                        Thread thread = new Thread(new Runnable() {
 //
 //                            @Override
@@ -141,7 +142,6 @@ public class MainActivity extends AppCompatActivity {
      * apaga/prende el simulador segun el parametro
      * @param instruction
      */
-
     private void callDeviceSonoff(String instruction){
 //        String urlString = "http://10.0.2.2:8080/zeroconf/switch";
         String urlString = "http://127.0.0.1:8080/zeroconf/switch";
