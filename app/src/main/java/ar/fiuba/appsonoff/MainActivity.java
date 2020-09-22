@@ -191,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
 
             connection.connect();
         } catch (Exception e) {
-            Log.e("MSG", "error al invocar al simulador" + e.getMessage());
+            Log.e("MSG", "error al invocar al simulador: " + e.getMessage() +". "+ e.getCause());
         }
     }
 
